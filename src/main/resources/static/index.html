@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .tabuleiro-xadrez {
+            width: 400px;
+            height: 400px;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            margin: 0 auto;
+        }
+
+        .tabuleiro-xadrez div {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clara {
+            background-color: #f0d9b5;
+        }
+
+        .escura {
+            background-color: #b58863;
+        }
+        
+        h1 {
+            text-align: center;
+            margin: 20px auto;
+        }
+
+        .peca-xadrez {
+            width: 50px;
+            height: 50px;
+        }
+
+        .selecionada {
+            outline: 2px solid rgb(0, 255, 0);
+        }
+
+        .mensagem {
+            text-align: right;
+            font-size: 24px;
+            margin-top: 20px;
+        }
+        
+        .botao-recarregar {
+            display: block;
+            margin: 20px auto;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+    </style>
+</head>
+
+<body>
+    <h1>Inicie o seu jogo, começando com as Brancas!</h1>
+    <button class="botao-recarregar" onclick="recarregarPagina()">Recomeçar Jogo</button>
+    <div class="tabuleiro-xadrez">
+        <!-- Aqui será gerado o tabuleiro de xadrez -->
+    </div>
+    <div class="mensagem" id="mensagem"></div>
+    <script>
+        const tabuleiroXadrez = document.querySelector('.tabuleiro-xadrez');
+        const mensagemDiv = document.getElementById('mensagem');
+        let isClara = true; // Iniciar com 'false' para começar com a cor preta
+        let turno = 'branco'; // Turno inicial é do jogador branco
+        let jogoTerminado = false; // Variável para controlar o estado do jogo
+
+        const pecas = [
+            ['torrePreto', 'cavaloPreto', 'bispoPreto', 'rainhaPreto', 'reiPreto', 'bispoPreto', 'cavaloPreto', 'torrePreto'],
+            ['peaoPreto', 'peaoPreto', 'peaoPreto', 'peaoPreto', 'peaoPreto', 'peaoPreto', 'peaoPreto', 'peaoPreto'],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            ['peaoBranco', 'peaoBranco', 'peaoBranco', 'peaoBranco', 'peaoBranco', 'peaoBranco', 'peaoBranco', 'peaoBranco'],
+            ['torreBranca', 'cavaloBranco', 'bispoBranco', 'rainhaBranca', 'reiBranco', 'bispoBranco', 'cavaloBranco', 'torreBranca']
+        ];
+
+        let pecaSelecionada = null;
+        let quadradoSelecionado = null;
+
+        let primeiroPeaoBrancoMovido = false;
+        let primeiroPeaoPretoMovido = false;
+
+        const caminhoLivre = (linhaInicio, colunaInicio, linhaFim, colunaFim) => {
+            let passoLinha = linhaFim > linhaInicio ? 1 : (linhaFim < linhaInicio ? -1 : 0);
+            let passoColuna = colunaFim > colunaInicio ? 1 : (colunaFim < colunaInicio ? -1 : 0);
+
+            let linha = linhaInicio + passoLinha;
+            let coluna = colunaInicio + passoColuna;
+
+            while (linha !== linhaFim || coluna !== colunaFim) {
+                if (pecas[linha][coluna] !== null) {
+                    return false;
+                }
+                linha += passoLinha;
+                coluna += passoColuna;
+            }
+            return true;
+        };
+
+        const movimentoValido = (peca, linhaInicio, colunaInicio, linhaFim, colunaFim) => {
+            const difLinha = Math.abs(linhaFim - linhaInicio);
+            const difColuna = Math.abs(colunaFim - colunaInicio);
+
+            const pecaInicio = pecas[linhaInicio][colunaInicio];
+            const pecaFim = pecas[linhaFim][colunaFim];
+
+            // Verificar se a casa de destino é ocupada por uma peça da mesma cor
+            if (pecaFim && pecaInicio.includes('Branco') === pecaFim.includes('Branco')) {
+                return false; // Não pode capturar peças da mesma cor
+            }
+
+            switch (peca) {
+                case 'peaoPreto':
+                    return ((linhaFim === linhaInicio + 1 || (!primeiroPeaoPretoMovido && linhaFim === linhaInicio + 2)) && colunaInicio === colunaFim && pecaFim === null) ||
+                           (linhaFim === linhaInicio + 1 && Math.abs(colunaInicio - colunaFim) === 1 && pecaFim !== null && !pecaFim.includes('Preto'));
+                case 'peaoBranco':
+                    return ((linhaFim === linhaInicio - 1 || (!primeiroPeaoBrancoMovido && linhaFim === linhaInicio - 2)) && colunaInicio === colunaFim && pecaFim === null) ||
+                           (linhaFim === linhaInicio - 1 && Math.abs(colunaInicio - colunaFim) === 1 && pecaFim !== null && !pecaFim.includes('Branco'));
+                case 'torrePreta':
+                case 'torreBranca':
+                    return (linhaInicio === linhaFim || colunaInicio === colunaFim) && caminhoLivre(linhaInicio, colunaInicio, linhaFim, colunaFim);
+                case 'bispoPreto':
+                case 'bispoBranco':
+                    return difLinha === difColuna && caminhoLivre(linhaInicio, colunaInicio, linhaFim, colunaFim);
+                case 'rainhaPreta':
+                case 'rainhaBranca':
+                    return ((linhaInicio === linhaFim || colunaInicio === colunaFim) || difLinha === difColuna) && caminhoLivre(linhaInicio, colunaInicio, linhaFim, colunaFim);
+                case 'reiPreto':
+                case 'reiBranco':
+                    return difLinha <= 1 && difColuna <= 1;
+                case 'cavaloPreto':
+                case 'cavaloBranco':
+                    return (difLinha === 2 && difColuna === 1) || (difLinha === 1 && difColuna === 2);
+                default:
+                    return false;
+            }
+        };
+
+        const finalizarJogo = (corVencedora) => {
+            jogoTerminado = true;
+            mensagemDiv.textContent = `${corVencedora} venceu o jogo!`;
+        };
+
+        const deselecionarPeca = () => {
+            const pecaAnteriormenteSelecionada = document.querySelector('.selecionada');
+            if (pecaAnteriormenteSelecionada) {
+                pecaAnteriormenteSelecionada.classList.remove('selecionada');
+            }
+        };
+
+        for (let i = 0; i < 64; i++) {
+            const linha = Math.floor(i / 8);
+            const coluna = i % 8;
+            const quadrado = document.createElement('div');
+            quadrado.classList.add(isClara ? 'clara' : 'escura');
+            quadrado.dataset.linha = linha;
+            quadrado.dataset.coluna = coluna;
+
+            const peca = pecas[linha][coluna];
+            if (peca) {
+                const img = document.createElement('img');
+                img.src = `images/${peca}.png`;
+                img.alt = peca;
+                img.classList.add('peca-xadrez');
+                quadrado.appendChild(img);
+            }
+
+            quadrado.addEventListener('click', () => {
+                if (jogoTerminado) return; // Se o jogo acabou, não fazer mais nada
+
+                if (pecaSelecionada) {
+                    const linhaAlvo = parseInt(quadrado.dataset.linha);
+                    const colunaAlvo = parseInt(quadrado.dataset.coluna);
+
+                    const linhaInicio = parseInt(quadradoSelecionado.dataset.linha);
+                    const colunaInicio = parseInt(quadradoSelecionado.dataset.coluna);
+                    const tipoPeca = pecaSelecionada.alt;
+                    const corPeca = tipoPeca.includes('Preto') ? 'preto' : 'branco';
+
+                    if (corPeca === turno && movimentoValido(tipoPeca, linhaInicio, colunaInicio, linhaAlvo, colunaAlvo)) {
+                        // Verificar se o Rei foi capturado
+                        if (quadrado.querySelector('img') && quadrado.querySelector('img').alt.includes('rei')) {
+                            const corReiCapturado = quadrado.querySelector('img').alt.includes('Branco') ? 'Branco' : 'Preto';
+                            const corVencedora = corReiCapturado === 'Branco' ? 'Preto' : 'Branco';
+                            finalizarJogo(corVencedora);
+                        }
+
+                        // Remove a peça capturada, se houver
+                        if (quadrado.querySelector('img')) {
+                            quadrado.removeChild(quadrado.querySelector('img'));
+                        }
+
+                        // Movimentar a peça
+                        quadrado.appendChild(pecaSelecionada);
+                        pecas[linhaAlvo][colunaAlvo] = pecas[linhaInicio][colunaInicio];
+                        pecas[linhaInicio][colunaInicio] = null;
+                        quadradoSelecionado.innerHTML = '';
+                        pecaSelecionada = null;
+                        quadradoSelecionado = null;
+
+                        // Marcar que o primeiro peão da cor foi movido
+                        if (tipoPeca === 'peaoBranco' && !primeiroPeaoBrancoMovido) {
+                            primeiroPeaoBrancoMovido = true;
+                        }
+                        if (tipoPeca === 'peaoPreto' && !primeiroPeaoPretoMovido) {
+                            primeiroPeaoPretoMovido = true;
+                        }
+
+                        // Alternar o turno e deselecionar peça
+                        turno = turno === 'branco' ? 'preto' : 'branco';
+                        deselecionarPeca();
+                    } else {
+                        // Deselecionar se o movimento for inválido
+                        deselecionarPeca();
+                        pecaSelecionada = null;
+                        quadradoSelecionado = null;
+                    }
+                } else if (quadrado.querySelector('img')) {
+                    const tipoPeca = quadrado.querySelector('img').alt;
+                    const corPeca = tipoPeca.includes('Preto') ? 'preto' : 'branco';
+
+                    if (corPeca === turno) {
+                        // Selecionar a peça
+                        deselecionarPeca(); // Deselecionar qualquer peça previamente selecionada
+                        pecaSelecionada = quadrado.querySelector('img');
+                        quadradoSelecionado = quadrado;
+                        pecaSelecionada.classList.add('selecionada');
+                    }
+                }
+            });
+
+            tabuleiroXadrez.appendChild(quadrado);
+            isClara = !isClara;
+            if ((i + 1) % 8 === 0) {
+                isClara = !isClara;
+            }
+        }
+        
+        // Recomeca o jogo
+        function recarregarPagina() {
+            location.reload();
+        }
+        
+    </script>
+</body>
+</html>
