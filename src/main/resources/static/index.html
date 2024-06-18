@@ -81,7 +81,7 @@
             [null, null, null, null, null, null, null, null],
             [null, null, null, null, null, null, null, null],
             ['peaoBranco', 'peaoBranco', 'peaoBranco', 'peaoBranco', 'peaoBranco', 'peaoBranco', 'peaoBranco', 'peaoBranco'],
-            ['torreBranca', 'cavaloBranco', 'bispoBranco', 'rainhaBranca', 'reiBranco', 'bispoBranco', 'cavaloBranco', 'torreBranca']
+            ['torreBranco', 'cavaloBranco', 'bispoBranco', 'rainhaBranco', 'reiBranco', 'bispoBranco', 'cavaloBranco', 'torreBranco']
         ];
 
         let pecaSelecionada = null;
@@ -126,14 +126,14 @@
                 case 'peaoBranco':
                     return ((linhaFim === linhaInicio - 1 || (!primeiroPeaoBrancoMovido && linhaFim === linhaInicio - 2)) && colunaInicio === colunaFim && pecaFim === null) ||
                            (linhaFim === linhaInicio - 1 && Math.abs(colunaInicio - colunaFim) === 1 && pecaFim !== null && !pecaFim.includes('Branco'));
-                case 'torrePreta':
-                case 'torreBranca':
+                case 'torrePreto':
+                case 'torreBranco':
                     return (linhaInicio === linhaFim || colunaInicio === colunaFim) && caminhoLivre(linhaInicio, colunaInicio, linhaFim, colunaFim);
                 case 'bispoPreto':
                 case 'bispoBranco':
                     return difLinha === difColuna && caminhoLivre(linhaInicio, colunaInicio, linhaFim, colunaFim);
-                case 'rainhaPreta':
-                case 'rainhaBranca':
+                case 'rainhaPreto':
+                case 'rainhaBranco':
                     return ((linhaInicio === linhaFim || colunaInicio === colunaFim) || difLinha === difColuna) && caminhoLivre(linhaInicio, colunaInicio, linhaFim, colunaFim);
                 case 'reiPreto':
                 case 'reiBranco':
@@ -156,6 +156,18 @@
             if (pecaAnteriormenteSelecionada) {
                 pecaAnteriormenteSelecionada.classList.remove('selecionada');
             }
+        };
+
+        const promoverPeao = (linha, coluna, cor) => {
+            const rainha = `rainha${cor === 'branco' ? 'Branco' : 'Preto'}`;
+            pecas[linha][coluna] = rainha;
+            const quadrado = document.querySelector(`[data-linha='${linha}'][data-coluna='${coluna}']`);
+            quadrado.innerHTML = ''; // Remove qualquer peça existente no quadrado
+            const img = document.createElement('img');
+            img.src = `images/${rainha}.png`;
+            img.alt = rainha;
+            img.classList.add('peca-xadrez');
+            quadrado.appendChild(img);
         };
 
         for (let i = 0; i < 64; i++) {
@@ -181,7 +193,6 @@
                 if (pecaSelecionada) {
                     const linhaAlvo = parseInt(quadrado.dataset.linha);
                     const colunaAlvo = parseInt(quadrado.dataset.coluna);
-
                     const linhaInicio = parseInt(quadradoSelecionado.dataset.linha);
                     const colunaInicio = parseInt(quadradoSelecionado.dataset.coluna);
                     const tipoPeca = pecaSelecionada.alt;
@@ -214,6 +225,14 @@
                         }
                         if (tipoPeca === 'peaoPreto' && !primeiroPeaoPretoMovido) {
                             primeiroPeaoPretoMovido = true;
+                        }
+
+                        // Verificar promoção do peão
+                        if (tipoPeca === 'peaoBranco' && linhaAlvo === 0) {
+                            promoverPeao(linhaAlvo, colunaAlvo, 'branco');
+                        }
+                        if (tipoPeca === 'peaoPreto' && linhaAlvo === 7) {
+                            promoverPeao(linhaAlvo, colunaAlvo, 'preto');
                         }
 
                         // Alternar o turno e deselecionar peça
