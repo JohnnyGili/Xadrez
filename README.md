@@ -1,0 +1,4 @@
+ Neste projeto SpringBoot foi realizado um jogo de Xadrez, onde inclui suas regras base de movimentação das peças,
+como também regras de turno e promoção do peao para rainha caso chegue no final do lado oposto do tabuleiro,
+pode ser mudado quem inicia o jogo através do codigo(Cor "Branco" ou Cor "Preto"), e após capturar o rei do adversario
+o jogo termina e não pode mais movimentar as peças, como também apresenta um botão de recomeçar o jogo.
